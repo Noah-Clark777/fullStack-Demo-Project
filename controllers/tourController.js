@@ -1,5 +1,14 @@
 // const fs = require('fs');
+// const { json } = require('express');
+const APIFeatures = require('../utils/apiFeatures');
 const Tour = require(`./../models/tourModel`);
+
+exports.aliasTopTours = (req, res, next) => {
+  req.query.limit = '5';
+  req.query.sort = '-ratingsAverage,price';
+  req.query.feilds = 'name, price, ratingsAverage,summary,difficulty';
+  next();
+};
 
 // const tours = JSON.parse(
 //   fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`, 'utf-8'),
@@ -25,9 +34,20 @@ const Tour = require(`./../models/tourModel`);
 //   next();
 // };
 
+//build query
+
+//1) filtering
 exports.getAllTours = async (req, res) => {
   try {
-    const tours = await Tour.find();
+    // exicute query
+    const features = new APIFeatures(Tour.find(), req.query)
+      .filter()
+      .sort()
+      .limitFields()
+      .pagination();
+    const tours = await features.query;
+
+    // send response
     res.status(200).json({
       status: 'success',
       results: tours.length,
@@ -76,7 +96,7 @@ exports.createTour = async (req, res) => {
   } catch (err) {
     res.status(400).json({
       status: 'fail',
-      message: 'Invalid sata sent!',
+      message: err,
     });
   }
 };
